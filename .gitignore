@@ -1,0 +1,25 @@
+# Python / Virtual Environment
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+
+# Environment variables & local configs
+.env
+.env.local
+.env.*.local
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+.DS_Store
