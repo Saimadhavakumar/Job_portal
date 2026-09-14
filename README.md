@@ -1,12 +1,12 @@
-# 🎯 Job Portal Platform
+# 🚀 Job Portal Platform
 
-A modern, full-stack, enterprise-grade Job Matching and Career Management Platform designed to connect job seekers (students/candidates) with employers and administrators. Built with a **Django REST Framework** backend and a **React 19 & Vite** frontend, powered by a smart **Weighted Recommendation Engine**.
+A modern, full-stack, enterprise-grade Job Matching and Career Management Platform designed to connect job seekers (students/candidates) with employers and administrators. Built with a **Django REST Framework** backend, **React 19 & Vite** frontend, and powered by a smart **Weighted Recommendation Engine**.
 
 ---
 
 ## 🌟 Key Features
 
-### 👤 Candidate & Student Experience
+### 👨‍🎓 Candidate & Student Experience
 - **Interactive Dashboard**: Real-time stats on application progress, saved jobs, notifications, and top job matches.
 - **Job Discovery & Search**: Advanced filtering by title, skills, location, work mode (Remote, Hybrid, Onsite), and employment type.
 - **Detailed Job Views**: Single-click job application, candidate profile preview, and resume selection.
@@ -15,13 +15,13 @@ A modern, full-stack, enterprise-grade Job Matching and Career Management Platfo
 - **Bookmark / Saved Jobs**: Easily save listings for quick access.
 - **Notification Hub**: Instant notifications for status updates and high-match job opportunities.
 
-### 🏢 Admin & Recruiter Portal
+### 🛡️ Admin & Recruiter Portal
 - **Management Dashboard**: Platform-wide analytics including total jobs, active applications, pending reviews, and registered companies.
 - **Job Management System**: Create, update, publish, or archive job postings with custom required skill tags and compensation ranges.
 - **Company Directory Management**: Create, view, and verify employer company profiles.
 - **Candidate Application Review**: Inspect candidate submissions, view uploaded resumes, write notes, and transition application statuses.
 
-### 🧠 Smart Recommendation Engine
+### 🤖 Smart Recommendation Engine
 - Custom algorithmic match scoring based on a weighted evaluation model:
   - **Skill Compatibility (50%)**: Compares candidate's skills against job requirement tags.
   - **Experience Level (20%)**: Evaluates candidate experience relative to post requirements.
@@ -36,7 +36,7 @@ A modern, full-stack, enterprise-grade Job Matching and Career Management Platfo
 ### Backend
 | Technology | Description |
 | :--- | :--- |
-| **Python 3.10+** | Core programming language |
+| **Python 3.10+** | Programming language |
 | **Django 5.x** | Core web framework |
 | **Django REST Framework (DRF)** | RESTful API architecture |
 | **SimpleJWT** | Secure JWT Authentication (Access & Refresh tokens) |
@@ -94,7 +94,7 @@ job_portal/
 
 ---
 
-## ⚡ API Endpoints Overview
+## 🔗 API Endpoints Overview
 
 All REST API endpoints are namespaced under `/api/v1/`:
 
@@ -115,7 +115,7 @@ All REST API endpoints are namespaced under `/api/v1/`:
 
 ---
 
-## 🚀 Getting Started
+## ⚡ Getting Started
 
 ### Prerequisites
 - **Python**: 3.10 or higher
@@ -133,7 +133,7 @@ All REST API endpoints are namespaced under `/api/v1/`:
 
 2. **Create and activate a virtual environment**:
    - **Windows**:
-     ```powershell
+     ```bash
      python -m venv venv
      .\venv\Scripts\activate
      ```
@@ -145,7 +145,7 @@ All REST API endpoints are namespaced under `/api/v1/`:
 
 3. **Install backend dependencies**:
    ```bash
-   pip install -r requirements.txt
+   pip install django djangorestframework djangorestframework-simplejwt django-cors-headers celery redis pillow
    ```
 
 4. **Apply database migrations**:
@@ -184,7 +184,7 @@ All REST API endpoints are namespaced under `/api/v1/`:
    ```
 
 4. **Access the application**:
-   Open your browser and navigate to `http://localhost:5173/` (or `http://localhost:3000/`).
+   Open your browser and navigate to `http://localhost:3000/`.
 
 > **Note**: Vite is preconfigured to proxy `/api` and `/media` requests to the Django backend running at `http://localhost:8000`.
 
@@ -192,7 +192,7 @@ All REST API endpoints are namespaced under `/api/v1/`:
 
 ## ⚙️ Environment & Configuration
 
-Backend settings are configured in `backend/config/settings/base.py`. Key variables can be customized via environment variables:
+Backend settings are configured in `backend/config/settings/base.py`. key variables can be customized via environment variables:
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
