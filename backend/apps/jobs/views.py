@@ -60,8 +60,24 @@ class AdminJobCreateView(APIView):
         if not (request.user and request.user.is_authenticated and (request.user.role == 'ADMIN' or request.user.is_staff)):
             return Response({"success": False, "error": {"code": "FORBIDDEN", "message": "Only administrators can publish jobs."}}, status=status.HTTP_403_FORBIDDEN)
 
-        skills_data = request.data.get('skills', [])
-        serializer = AdminJobCreateUpdateSerializer(data=request.data)
+        from apps.companies.models import Company
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        company_input = data.get('company_name') or data.get('company_id') or data.get('company')
+        if company_input:
+            if isinstance(company_input, str) and not str(company_input).isdigit():
+                company_obj, _ = Company.objects.get_or_create(
+                    name=company_input.strip(),
+                    defaults={
+                        'location': data.get('location', ''),
+                        'description': f"Company profile for {company_input.strip()}"
+                    }
+                )
+                data['company'] = company_obj.id
+            elif str(company_input).isdigit():
+                data['company'] = int(company_input)
+
+        skills_data = data.get('skills', [])
+        serializer = AdminJobCreateUpdateSerializer(data=data)
         if serializer.is_valid():
             job_status = serializer.validated_data.get('status', 'DRAFT')
             published_at = timezone.now() if job_status == 'PUBLISHED' else None
@@ -71,7 +87,7 @@ class AdminJobCreateView(APIView):
 
                 # Process skill associations
                 for sk_item in skills_data:
-                    name = sk_item.get('name')
+                    name = sk_item.get('name') if isinstance(sk_item, dict) else str(sk_item)
                     if name:
                         norm = Skill.normalize_skill_name(name)
                         skill_obj, _ = Skill.objects.get_or_create(
@@ -82,8 +98,8 @@ class AdminJobCreateView(APIView):
                             job=job,
                             skill=skill_obj,
                             defaults={
-                                'importance': sk_item.get('importance', 'MEDIUM'),
-                                'required': sk_item.get('required', True)
+                                'importance': sk_item.get('importance', 'MEDIUM') if isinstance(sk_item, dict) else 'MEDIUM',
+                                'required': sk_item.get('required', True) if isinstance(sk_item, dict) else True
                             }
                         )
 
@@ -105,10 +121,26 @@ class AdminJobDetailView(APIView):
 
         try:
             job = Job.objects.get(id=id)
-            skills_data = request.data.get('skills', None)
+            from apps.companies.models import Company
+            data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+            company_input = data.get('company_name') or data.get('company_id') or data.get('company')
+            if company_input:
+                if isinstance(company_input, str) and not str(company_input).isdigit():
+                    company_obj, _ = Company.objects.get_or_create(
+                        name=company_input.strip(),
+                        defaults={
+                            'location': data.get('location', ''),
+                            'description': f"Company profile for {company_input.strip()}"
+                        }
+                    )
+                    data['company'] = company_obj.id
+                elif str(company_input).isdigit():
+                    data['company'] = int(company_input)
+
+            skills_data = data.get('skills', None)
             old_status = job.status
             
-            serializer = AdminJobCreateUpdateSerializer(job, data=request.data, partial=True)
+            serializer = AdminJobCreateUpdateSerializer(job, data=data, partial=True)
             if serializer.is_valid():
                 new_status = serializer.validated_data.get('status', job.status)
                 if old_status != 'PUBLISHED' and new_status == 'PUBLISHED':

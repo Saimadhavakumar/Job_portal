@@ -15,7 +15,7 @@ export const AdminJobFormPage = () => {
   const [successMsg, setSuccessMsg] = useState('');
 
   // Form Fields
-  const [companyId, setCompanyId] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [title, setTitle] = useState('');
   const [department, setDepartment] = useState('Engineering');
   const [workMode, setWorkMode] = useState('REMOTE');
@@ -32,22 +32,31 @@ export const AdminJobFormPage = () => {
   const [contactEmail, setContactEmail] = useState('');
 
   useEffect(() => {
-    const fetchCompanies = async () => {
-      try {
-        const res = await api.get('/companies/');
-        if (res.data.success) {
-          setCompanies(res.data.companies);
-          if (res.data.companies.length > 0) {
-            setCompanyId(res.data.companies[0].id);
+    if (isEdit && id) {
+      const fetchJobDetails = async () => {
+        try {
+          const res = await api.get(`/jobs/${id}/`);
+          if (res.data.success && res.data.job) {
+            const j = res.data.job;
+            setCompanyName(j.company?.name || '');
+            setTitle(j.title || '');
+            setWorkMode(j.work_mode || 'REMOTE');
+            setEmploymentType(j.employment_type || 'FULL_TIME');
+            setExperienceLevel(j.experience_level || 'ENTRY');
+            setLocation(j.location || '');
+            setDescription(j.description || '');
+            setApplicationUrl(j.application_url || '');
+            if (j.required_skills) {
+              setSkillsText(j.required_skills.map(s => s.name).join(', '));
+            }
           }
+        } catch (err) {
+          console.error("Failed to load job details for editing:", err);
         }
-      } catch (err) {
-        console.error("Failed to fetch companies:", err);
-      }
-    };
-
-    fetchCompanies();
-  }, []);
+      };
+      fetchJobDetails();
+    }
+  }, [isEdit, id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -55,7 +64,8 @@ export const AdminJobFormPage = () => {
     setSubmitting(true);
 
     const payload = {
-      company_id: companyId,
+      company_name: companyName,
+      company: companyName,
       title,
       department,
       work_mode: workMode,
@@ -128,16 +138,15 @@ export const AdminJobFormPage = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#111111] mb-1">Company</label>
-              <select
-                value={companyId}
-                onChange={(e) => setCompanyId(e.target.value)}
+              <label className="block text-xs font-medium text-[#111111] mb-1">Company Name</label>
+              <input
+                type="text"
+                required
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. TriNet, Google, Microsoft"
                 className="w-full px-3 py-2 bg-white border border-[#E5E5E5] rounded-lg text-xs text-[#111111] focus:outline-none focus:border-[#2563EB]"
-              >
-                {companies.map(c => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
+              />
             </div>
 
             <div>
