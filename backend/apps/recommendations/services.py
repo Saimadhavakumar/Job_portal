@@ -168,13 +168,14 @@ def process_job_published_recommendations(job_id):
                         "message": f"We found a {match_res['score']}% profile match for {job.title}! {match_res['reason']}"
                     }
                 )
-                if created:
-                    EmailLog.objects.create(
-                        user=user,
-                        notification=notif,
-                        email_type='NEW_JOB_MATCH',
-                        status='QUEUED'
-                    )
+                from apps.notifications.services import send_job_match_email
+                send_job_match_email(
+                    user=user,
+                    job=job,
+                    score=match_res['score'],
+                    reason=match_res['reason'],
+                    notification=notif
+                )
 
     except Exception as e:
         logger.exception(f"Error processing recommendations for published Job {job_id}: {e}")

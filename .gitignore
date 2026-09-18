@@ -23,3 +23,8 @@ dist/
 .vscode/
 .idea/
 .DS_Store
+
+# Media files
+media/
+backend/media/
+

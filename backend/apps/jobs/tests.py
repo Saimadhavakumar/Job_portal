@@ -52,3 +52,5 @@ class JobsTestCase(TestCase):
         disc_res = self.client.get('/api/v1/jobs/?search=React')
         self.assertEqual(disc_res.status_code, status.HTTP_200_OK)
         self.assertEqual(disc_res.data['count'], 1)
+        self.assertEqual(len(disc_res.data['jobs']), 1)
+

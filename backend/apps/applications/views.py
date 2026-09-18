@@ -6,6 +6,7 @@ from .serializers import SavedJobSerializer, ApplicationSerializer, AdminApplica
 from apps.jobs.models import Job
 from apps.resumes.models import Resume, ResumeVersion
 from apps.notifications.models import Notification
+from apps.common.pagination import StandardPagination
 
 class ToggleSaveJobView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -27,6 +28,15 @@ class SavedJobListView(APIView):
 
     def get(self, request):
         saved = SavedJob.objects.filter(user=request.user).select_related('job', 'job__company').order_by('-created_at')
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(saved, request)
+        if page is not None:
+            serializer = SavedJobSerializer(page, many=True, context={'request': request})
+            response = paginator.get_paginated_response(serializer.data)
+            response.data['saved_jobs'] = response.data.pop('results')
+            return response
+
         return Response({"success": True, "saved_jobs": SavedJobSerializer(saved, many=True, context={'request': request}).data})
 
 class ApplyJobView(APIView):
@@ -76,11 +86,63 @@ class ApplyJobView(APIView):
             "application": ApplicationSerializer(app, context={'request': request}).data
         }, status=status.HTTP_201_CREATED)
 
+class WithdrawApplicationView(APIView):
+    """Allow students to withdraw their own applications."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, application_id):
+        try:
+            app = Application.objects.get(id=application_id, user=request.user)
+        except Application.DoesNotExist:
+            return Response({"success": False, "error": {"code": "NOT_FOUND", "message": "Application not found."}}, status=status.HTTP_404_NOT_FOUND)
+
+        # Cannot withdraw if already in a terminal state
+        non_withdrawable = ['WITHDRAWN', 'REJECTED', 'OFFER']
+        if app.status in non_withdrawable:
+            return Response({
+                "success": False,
+                "error": {
+                    "code": "INVALID_STATUS_TRANSITION",
+                    "message": f"Cannot withdraw an application with status '{app.status}'."
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        old_status = app.status
+        app.status = 'WITHDRAWN'
+        app.save()
+
+        ApplicationStatusHistory.objects.create(
+            application=app,
+            old_status=old_status,
+            new_status='WITHDRAWN',
+            changed_by=request.user,
+            note=request.data.get('note', 'Application withdrawn by candidate.')
+        )
+
+        return Response({
+            "success": True,
+            "message": "Application withdrawn successfully.",
+            "application": ApplicationSerializer(app, context={'request': request}).data
+        })
+
 class StudentApplicationListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         applications = Application.objects.filter(user=request.user).select_related('job', 'job__company', 'resume_version').prefetch_related('history').order_by('-applied_at')
+
+        status_filter = request.query_params.get('status')
+        if status_filter:
+            applications = applications.filter(status=status_filter)
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(applications, request)
+        if page is not None:
+            serializer = ApplicationSerializer(page, many=True, context={'request': request})
+            response = paginator.get_paginated_response(serializer.data)
+            response.data['applications'] = response.data.pop('results')
+            return response
+
         return Response({"success": True, "applications": ApplicationSerializer(applications, many=True, context={'request': request}).data})
 
 class AdminApplicationManageView(APIView):
@@ -96,6 +158,14 @@ class AdminApplicationManageView(APIView):
         status_param = request.query_params.get('status')
         if status_param:
             apps_qs = apps_qs.filter(status=status_param)
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(apps_qs, request)
+        if page is not None:
+            serializer = AdminApplicationSerializer(page, many=True, context={'request': request})
+            response = paginator.get_paginated_response(serializer.data)
+            response.data['applications'] = response.data.pop('results')
+            return response
 
         return Response({"success": True, "applications": AdminApplicationSerializer(apps_qs, many=True, context={'request': request}).data})
 

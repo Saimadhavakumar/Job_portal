@@ -7,6 +7,7 @@ from .views import (
 
 urlpatterns = [
     path('signup/', RegisterView.as_view(), name='auth_signup'),
+    path('register/', RegisterView.as_view(), name='auth_register'),
     path('verify-email/', VerifyEmailView.as_view(), name='auth_verify_email'),
     path('resend-code/', ResendCodeView.as_view(), name='auth_resend_code'),
     path('login/', LoginView.as_view(), name='auth_login'),

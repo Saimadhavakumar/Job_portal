@@ -3,13 +3,35 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Notification
 from .serializers import NotificationSerializer
+from apps.common.pagination import StandardPagination
 
 class NotificationListView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
         notifs = Notification.objects.filter(user=request.user).select_related('job', 'job__company').order_by('-created_at')
-        unread_count = notifs.filter(is_read=False).count()
+
+        # Optional filter by type
+        notif_type = request.query_params.get('type')
+        if notif_type:
+            notifs = notifs.filter(type=notif_type)
+
+        # Optional filter for unread only
+        unread_only = request.query_params.get('unread')
+        if unread_only and unread_only.lower() in ('true', '1'):
+            notifs = notifs.filter(is_read=False)
+
+        unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(notifs, request)
+        if page is not None:
+            serializer = NotificationSerializer(page, many=True, context={'request': request})
+            response = paginator.get_paginated_response(serializer.data)
+            response.data['notifications'] = response.data.pop('results')
+            response.data['unread_count'] = unread_count
+            return response
+
         return Response({
             "success": True,
             "unread_count": unread_count,

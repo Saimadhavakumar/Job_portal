@@ -9,6 +9,7 @@ from .models import Job, JobSkill, JobSource
 from .serializers import JobSerializer, AdminJobCreateUpdateSerializer
 from apps.profiles.models import Skill
 from apps.recommendations.services import process_job_published_recommendations
+from apps.common.pagination import StandardPagination
 
 class JobDiscoveryView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -41,7 +42,17 @@ class JobDiscoveryView(APIView):
         if skill_param:
             jobs = jobs.filter(job_skills__skill__name__icontains=skill_param)
 
-        serializer = JobSerializer(jobs.distinct(), many=True, context={'request': request})
+        jobs = jobs.distinct()
+
+        paginator = StandardPagination()
+        page = paginator.paginate_queryset(jobs, request)
+        if page is not None:
+            serializer = JobSerializer(page, many=True, context={'request': request})
+            response = paginator.get_paginated_response(serializer.data)
+            response.data['jobs'] = response.data.pop('results')
+            return response
+
+        serializer = JobSerializer(jobs, many=True, context={'request': request})
         return Response({"success": True, "count": jobs.count(), "jobs": serializer.data})
 
 class JobDetailView(APIView):
@@ -178,4 +189,3 @@ class AdminJobDetailView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Job.DoesNotExist:
             return Response({"success": False, "error": {"code": "NOT_FOUND", "message": "Job not found."}}, status=status.HTTP_404_NOT_FOUND)
-

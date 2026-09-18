@@ -12,14 +12,41 @@ from apps.profiles.models import Profile, UserPreference
 
 logger = logging.getLogger(__name__)
 
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+import threading
+from apps.resumes.models import Resume, ResumeVersion
+from apps.resumes.services import parse_resume_version
+
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
             raw_code, _ = EmailVerificationCode.generate_code_for_user(user)
+
+            # Check if a resume was attached during registration
+            resume_file = request.FILES.get('resume') or request.FILES.get('file')
+            if resume_file:
+                ext = resume_file.name.split('.')[-1].lower()
+                if ext == 'pdf' and resume_file.size <= 10 * 1024 * 1024:
+                    resume, _ = Resume.objects.get_or_create(
+                        user=user,
+                        defaults={'title': f"{user.first_name}'s Resume"}
+                    )
+                    rv = ResumeVersion.objects.create(
+                        resume=resume,
+                        file=resume_file,
+                        file_name=resume_file.name,
+                        file_size=resume_file.size,
+                        mime_type=resume_file.content_type or 'application/pdf',
+                        version_number=1,
+                        parsing_status='PENDING'
+                    )
+                    threading.Thread(target=parse_resume_version, args=(rv.id,)).start()
+
             # Log verification code for development / test verification
             logger.info(f"Verification code for {user.email}: {raw_code}")
             print(f"\n========================================\nVERIFICATION CODE FOR {user.email}: {raw_code}\n========================================\n")
